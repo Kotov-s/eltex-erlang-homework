@@ -1,19 +1,18 @@
 ## 1 Часть
-![Alt text](pics/part1/1.png)
-
+![Alt text](../hm2/pics/part1/1.png)
 Мы выполняем  операцию pattern matching, для того чтобы разделить список `Persons` на первый элемент и остаток (они же head и tail или голова и хвост). Поэтому переменная `First` будет равна первому элементу списка `Persons`, а переменная `Rest` будет равна новому списку начиная со второго элемента списка `Persons`.
 
-![Alt text](pics/part1/2.png)
+![Alt text](../hm2/pics/part1/2.png)
 
 Происходит то же самое, что и в предыдущем случае: переменная `Second` связывается с первым элементом списка `Rest` (или со вторым элементом оригинального списка `Persons`), все остальное связывается со второй переменной `Rest1`.
 
-![Alt text](pics/part1/3.png)
+![Alt text](../hm2/pics/part1/3.png)
 
-![Alt text](pics/part1/list.png)
+![Alt text](../hm2/pics/part1/list.png)
 
 Поскольку в списке `Rest1` находится всего 2 элемента, то после того как они извлекаются, чтобы сопоставится с переменным `Third` и `Fourth`, список `Rest1` становится пустым. И именно этот пустой список и сопоставляется с переменной `Rest2`.
 
-![Alt text](pics/part1/4.png)
+![Alt text](../hm2/pics/part1/4.png)
 
 Убеждаемся, что список `Persons` не изменился.
 
@@ -28,31 +27,31 @@
                 gender}).
 ```
 
-![Alt text](pics/part2/rr.png)
+![Alt text](../hm2/pics/part2/rr.png)
 
 Запись была считана из файла заголовка с помощью команды rr("person.hrl") (rr - read records). 
 
 
 
-![Alt text](pics/part2/1.png)
+![Alt text](../hm2/pics/part2/1.png)
 
 Создание записи, которая сопоставляется с переменной Persons
 
 ### 1.
 
-![Alt text](pics/part2/2.png)
+![Alt text](../hm2/pics/part2/2.png)
 
 Первый элемент списка Persons (а именно запись `#person{id = 1, name = “Bob”, age = 23, gender = male`), сопоставляется с неинициализированной переменной `FirstPerson`, которая становится равной этому элементу. Прочерк означает анонимную переменную. Таким образом показываем, что мы не заинтересованы в значении этой переменной и ее данные нам не важны.
 
 ### 2.
 
-![Alt text](pics/part2/3.png)
+![Alt text](../hm2/pics/part2/3.png)
 
 `SecondPerson` сопоставляется со вторым элементом списка Persons. Остальные элементы игнорируются. 
 
 ### 3.
 
-![Alt text](pics/part2/4.png)
+![Alt text](../hm2/pics/part2/4.png)
 
 Появляется ошибка, потому что `SecondPerson` (переменная, чьё значение равно `#person{id = 2,name = "Kate",age = 20,gender = female}`) сопоставляется с `#person{id = 3,name = "Jack",age = 34,gender = male}`.
 
@@ -70,15 +69,15 @@
 
 ### 4.
 
-![Alt text](pics/part2/5.png)
+![Alt text](../hm2/pics/part2/5.png)
 
 Эти команды извлекают имя и возраст из записи `SecondPerson` и присваивают их переменным `SecondName` и `SecondAge` соответственно.
 
-![Alt text](pics/part2/6.png)
+![Alt text](../hm2/pics/part2/6.png)
 
 Проверяем и убеждаемся, что список записей Persons не изменился.
 
-![Alt text](pics/part2/7.png)
+![Alt text](../hm2/pics/part2/7.png)
 
 Эта команда создает новую запись на основе записи `SecondPerson`, но с возрастом, установленным в 21 год. Однако это не изменяет исходную запись `SecondPerson` или список `Persons`. В Erlang'e переменные не меняются.
 
