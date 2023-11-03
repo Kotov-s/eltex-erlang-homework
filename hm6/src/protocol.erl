@@ -21,7 +21,6 @@
 
 ipv4(<<Version:4, _Rest/bitstring >>) when Version =/= 4 ->
     throw("Incorrect version of ip");
-
 ipv4(<<Version:4, IHL:4, ToS:8, TotalLength:16,
  	Identification:16, Flags:3, FragOffset:13,
  	TimeToLive:8, Protocol:8, Checksum:16,
@@ -46,10 +45,8 @@ ipv4(<<Version:4, IHL:4, ToS:8, TotalLength:16,
         options_and_padding = OptionsAndPadding,
 		remaining_data = RemainingData
     };
-
 ipv4(_) ->
     throw("Incorrect argument").
-
 
 ipv4_listener() ->
     receive 
