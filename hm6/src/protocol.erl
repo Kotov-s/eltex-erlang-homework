@@ -8,14 +8,14 @@
 	tos,
 	total_length,
 	identification,
-    flags,
-    frag_offset,
-    time_to_live,
-    protocol,
-    checksum,
-    source_address,
-    destination_address,
-    options_and_padding,
+	flags,
+	frag_offset,
+	time_to_live,
+	protocol,
+	checksum,
+	source_address,
+	destination_address,
+	options_and_padding,
 	remaining_data
 }).
 
@@ -54,8 +54,9 @@ ipv4_listener() ->
         try ipv4(BinData) of
             Result -> From ! Result
         catch
-            throw:Error -> From ! {error, Error},
-            io:format("Error: ~p~n", [Error])
+            throw:Error -> 
+			From ! {error, Error},
+            		io:format("Error: ~p~n", [Error])
         end,
         ipv4_listener();
     Msg ->
