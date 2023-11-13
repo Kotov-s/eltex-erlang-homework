@@ -11,8 +11,13 @@
 
 -module(keylist_mgr).
 
--export([loop/1, init/1, start/0]).
--export([start_child/1, stop_child/1, get_names/0, stop/0]).
+%% API
+-export([start_child/1, stop_child/1, get_names/0, stop/0, start/0]).
+
+%% Callbacks
+-export([loop/1, init/1]).
+
+-type restart_type() :: permanent | temporary.
 
 -record(state, {
     children = []   :: list({atom(), pid()}) | [], 
@@ -20,14 +25,7 @@
 }).
 
 
-%% @doc Initializes the keylist manager.
-%% This function sets the process flag to trap exits, registers the process with the given name, and starts the loop.
-%% @end
-init(Name) ->
-    process_flag(trap_exit, true),
-    register(Name, self()),
-    loop(#state{}).
-
+%%% API
 -spec start() -> {ok, pid(), reference()} | {already_exists}.
 %% @doc Starts the keylist manager.
 %% This function checks if the keylist manager is already running, and if not, starts it.
@@ -41,7 +39,7 @@ start() ->
             {already_exists}
     end.
 
--spec start_child(map()) -> no_return().
+-spec start_child(#{name := atom(), restart := restart_type()}) -> no_return().
 %% @doc Starts a child keylist.
 start_child(Params) ->
     ?MODULE ! {self(), start_child, Params}.
@@ -59,16 +57,15 @@ get_names() ->
 -spec stop() -> no_return().    
 %% @doc Stops the keylist manager.
 stop() ->
-    ?MODULE ! {stop}.
+    ?MODULE ! stop.
 
-%% @doc The main loop of the keylist manager.
-%% This function receives and handles messages to start and stop child keylists, get the names of all child keylists, and stop the keylist manager itself.
-%% @end
+%%% CALLBACK FUNCTIONS
+
+%% @hidden
 loop(#state{children = Children, restart = Restarts} = State) ->
     receive
         {From, start_child, #{name := Name, restart := Restart} = _Params } ->
-            Res = proplists:lookup(Name, Children),
-            case Res of
+            case proplists:lookup(Name, Children) of
                 none ->
                     {ok, Pid} = keylist:start_link(Name),
                     case Restart of
@@ -87,8 +84,7 @@ loop(#state{children = Children, restart = Restarts} = State) ->
                     loop(State)
             end;
         {From, stop_child, Name} ->
-            Res = proplists:lookup(Name, Children),
-            case Res of
+            case proplists:lookup(Name, Children) of
                 none ->
                     From ! {not_found},
                     loop(State);                
@@ -103,9 +99,11 @@ loop(#state{children = Children, restart = Restarts} = State) ->
             From ! Children,
             loop(State);
         stop ->
-            exit(stop_proc);
+            io:format("Process ~p stopped~n", [?MODULE]),
+            % Children killing
+            lists:foreach(fun({Name, _Pid}) -> keylist:stop(Name) end, Children),
+            ok;
         {'EXIT', Pid, Reason} -> 
-
             case lists:keyfind(Pid, 2, Children) of
                 false -> 
                     io:format("Received an exit signal from an unknown process with pid = ~p and reason = ~p~n", [Pid, Reason]),
@@ -122,6 +120,12 @@ loop(#state{children = Children, restart = Restarts} = State) ->
                     loop(NewState)
             end            
     end.
+
+%% @hidden
+init(Name) ->
+    process_flag(trap_exit, true),
+    register(Name, self()),
+    loop(#state{}).
 ```
 Модуль был проанализирован `dialyzer`'ом на наличие ошибок, и, как видно, ошибок не было обнаружено.
 ```shell
@@ -201,7 +205,6 @@ ok
     counter = 0 :: integer()
 }).
 
-
 -spec add(atom(), any(), any(), any()) -> no_return().
 %% @doc Adds a key-value pair to the keylist.
 add(Name, Key, Value, Comment) ->
@@ -237,9 +240,24 @@ show_list(Name) ->
 stop(Name) ->
     Name ! {stop, Name}. 
 
-%% @doc The main loop of the keylist.
-%% This function receives and handles messages to add, check, take, find, and delete key-value pairs, show the list of all key-value pairs, and stop the keylist.
-%% @end
+-spec start_monitor(atom()) -> {ok, pid(), reference()}.
+%% @doc Starts a monitor for the keylist.
+start_monitor(Name) ->
+    {Pid, MonitorRef} = spawn_monitor(?MODULE, init, [Name]),
+    {ok, Pid, MonitorRef}.
+
+-spec start_link(atom()) -> {ok, pid()}.
+%% @doc Starts a link for the keylist.
+start_link(Name) ->
+    Pid = spawn_link(?MODULE, init, [Name]),
+    {ok, Pid}.
+
+%% @hidden
+init(Name) ->
+    register(Name, self()),
+    loop(#state{}).
+
+%% @hidden
 loop(#state{list = List, counter = Counter} = State) ->
     receive
         {From, add, Key, Value, Comment} ->
@@ -252,26 +270,23 @@ loop(#state{list = List, counter = Counter} = State) ->
             From ! {ok, Res, NewState#state.counter},
             loop(NewState);
         {From, take, Key} ->
-            Res = lists:keytake(Key, 1, List),
-            case Res of
+            case lists:keytake(Key, 1, List) of
                 false ->
                     NewState = State#state{counter = Counter + 1},
                     From ! {ok, not_found, NewState#state.counter},
                     loop(NewState);
-                _ ->
-                    {_, Found, NewList} = Res,
+                {_, Found, NewList} ->
                     NewState = State#state{list = NewList, counter = Counter + 1},
                     From ! {ok, Found, NewState#state.counter},
                     loop(NewState)
             end;
         {From, find, Key} ->
-            Res = lists:keyfind(Key, 1, List),
             NewState = State#state{counter = Counter + 1},
-            case Res of
+            case lists:keyfind(Key, 1, List) of
                 false ->
                     From ! {ok, not_found, NewState#state.counter},
                     loop(NewState);
-                _ ->
+                Res ->
                     From ! {ok, Res, NewState#state.counter},
                     loop(NewState)
             end;
@@ -285,27 +300,9 @@ loop(#state{list = List, counter = Counter} = State) ->
             From ! {ok, List, NewState#state.counter},
             loop(NewState);
         {stop, Name} ->
-            exit(stop_proc),
+            io:format("Process ~p stopped", [Name]),
             {ok, Name, stopped}
     end.
-
--spec start_monitor(atom()) -> {ok, pid(), reference()}.
-%% @doc Starts a monitor for the keylist.
-start_monitor(Name) ->
-    {Pid, MonitorRef} = spawn_monitor(?MODULE, init, [Name]),
-    {ok, Pid, MonitorRef}.
-
--spec start_link(atom()) -> {ok, pid()}.
-%% @doc Starts a link for the keylist.
-start_link(Name) ->
-    Pid = spawn_link(?MODULE, init, [Name]),
-    {ok, Pid}.
-
-%% @doc Initializes the keylist.
-%% This function registers the process with the given name and starts the loop.
-init(Name) ->
-    register(Name, self()),
-    loop(#state{}).
 ```
 
 Модуль был проанализирован `dialyzer`'ом на наличие ошибок, и, как видно, ошибок не было обнаружено.
