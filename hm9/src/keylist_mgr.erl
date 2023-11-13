@@ -6,8 +6,11 @@
 
 -module(keylist_mgr).
 
--export([loop/1, init/1, start/0]).
--export([start_child/1, stop_child/1, get_names/0, stop/0]).
+%% API
+-export([start_child/1, stop_child/1, get_names/0, stop/0, start/0]).
+
+%% Callbacks
+-export([loop/1, init/1]).
 
 -type restart_type() :: permanent | temporary.
 
@@ -17,14 +20,7 @@
 }).
 
 
-%% @doc Initializes the keylist manager.
-%% This function sets the process flag to trap exits, registers the process with the given name, and starts the loop.
-%% @end
-init(Name) ->
-    process_flag(trap_exit, true),
-    register(Name, self()),
-    loop(#state{}).
-
+%%% API
 -spec start() -> {ok, pid(), reference()} | {already_exists}.
 %% @doc Starts the keylist manager.
 %% This function checks if the keylist manager is already running, and if not, starts it.
@@ -56,16 +52,16 @@ get_names() ->
 -spec stop() -> no_return().    
 %% @doc Stops the keylist manager.
 stop() ->
-    ?MODULE ! {stop}.
+    ?MODULE ! stop.
 
-%% @doc The main loop of the keylist manager.
-%% This function receives and handles messages to start and stop child keylists, get the names of all child keylists, and stop the keylist manager itself.
-%% @end
+
+%%% CALLBACK FUNCTIONS
+
+%% @hidden
 loop(#state{children = Children, restart = Restarts} = State) ->
     receive
         {From, start_child, #{name := Name, restart := Restart} = _Params } ->
-            Res = proplists:lookup(Name, Children),
-            case Res of
+            case proplists:lookup(Name, Children) of
                 none ->
                     {ok, Pid} = keylist:start_link(Name),
                     case Restart of
@@ -84,8 +80,7 @@ loop(#state{children = Children, restart = Restarts} = State) ->
                     loop(State)
             end;
         {From, stop_child, Name} ->
-            Res = proplists:lookup(Name, Children),
-            case Res of
+            case proplists:lookup(Name, Children) of
                 none ->
                     From ! {not_found},
                     loop(State);                
@@ -100,9 +95,11 @@ loop(#state{children = Children, restart = Restarts} = State) ->
             From ! Children,
             loop(State);
         stop ->
-            exit(stop_proc);
+            io:format("Process ~p stopped~n", [?MODULE]),
+            % Children killing
+            lists:foreach(fun({Name, _Pid}) -> keylist:stop(Name) end, Children),
+            ok;
         {'EXIT', Pid, Reason} -> 
-
             case lists:keyfind(Pid, 2, Children) of
                 false -> 
                     io:format("Received an exit signal from an unknown process with pid = ~p and reason = ~p~n", [Pid, Reason]),
@@ -119,3 +116,9 @@ loop(#state{children = Children, restart = Restarts} = State) ->
                     loop(NewState)
             end            
     end.
+
+%% @hidden
+init(Name) ->
+    process_flag(trap_exit, true),
+    register(Name, self()),
+    loop(#state{}).

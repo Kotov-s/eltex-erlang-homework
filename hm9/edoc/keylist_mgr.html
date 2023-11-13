@@ -10,17 +10,21 @@
 <hr>
 
 <h1>Module keylist_mgr</h1>
-<ul class="index"><li><a href="#description">Description</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>This module manages <b>keylists</b>.
+<ul class="index"><li><a href="#description">Description</a></li><li><a href="#types">Data Types</a></li><li><a href="#index">Function Index</a></li><li><a href="#functions">Function Details</a></li></ul>This module manages <b>keylists</b>.
 
 <p><b>Introduced in:</b> 12.11.2023</p>
 <p><b>Authors:</b> Andrey Kotov.</p>
 
 <h2><a name="description">Description</a></h2>This module manages <b>keylists</b>.
    It provides functions to start and stop keylists, get the names of all keylists, and stop the keylist manager itself.
+<h2><a name="types">Data Types</a></h2>
+
+<h3 class="typedecl"><a name="type-restart_type">restart_type()</a></h3>
+<p><tt>restart_type() = permanent | temporary</tt></p>
+
+
 <h2><a name="index">Function Index</a></h2>
 <table width="100%" border="1" cellspacing="0" cellpadding="2" summary="function index"><tr><td valign="top"><a href="#get_names-0">get_names/0</a></td><td>Gets the names of all child keylists.</td></tr>
-<tr><td valign="top"><a href="#init-1">init/1</a></td><td>Initializes the keylist manager.</td></tr>
-<tr><td valign="top"><a href="#loop-1">loop/1</a></td><td>The main loop of the keylist manager.</td></tr>
 <tr><td valign="top"><a href="#start-0">start/0</a></td><td>Starts the keylist manager.</td></tr>
 <tr><td valign="top"><a href="#start_child-1">start_child/1</a></td><td>Starts a child keylist.</td></tr>
 <tr><td valign="top"><a href="#stop-0">stop/0</a></td><td>Stops the keylist manager.</td></tr>
@@ -35,20 +39,6 @@
 <p> </p>
 </div><p>Gets the names of all child keylists.</p>
 
-<h3 class="function"><a name="init-1">init/1</a></h3>
-<div class="spec">
-<p><tt>init(Name) -&gt; any()</tt></p>
-<p> </p>
-</div><p>Initializes the keylist manager.
-  This function sets the process flag to trap exits, registers the process with the given name, and starts the loop.</p>
-
-<h3 class="function"><a name="loop-1">loop/1</a></h3>
-<div class="spec">
-<p><tt>loop(State) -&gt; any()</tt></p>
-<p> </p>
-</div><p>The main loop of the keylist manager.
-  This function receives and handles messages to start and stop child keylists, get the names of all child keylists, and stop the keylist manager itself.</p>
-
 <h3 class="function"><a name="start-0">start/0</a></h3>
 <div class="spec">
 <p><tt>start() -&gt; {ok, pid(), reference()} | {already_exists}</tt><br></p>
@@ -58,7 +48,7 @@
 
 <h3 class="function"><a name="start_child-1">start_child/1</a></h3>
 <div class="spec">
-<p><tt>start_child(Params::map()) -&gt; no_return()</tt><br></p>
+<p><tt>start_child(Params::#{name := atom(), restart := <a href="#type-restart_type">restart_type()</a>}) -&gt; no_return()</tt><br></p>
 <p> </p>
 </div><p>Starts a child keylist.</p>
 
