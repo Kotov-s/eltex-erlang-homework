@@ -59,6 +59,7 @@ get_names() ->
 stop() ->
     ?MODULE ! stop.
 
+
 %%% CALLBACK FUNCTIONS
 
 %% @hidden
@@ -89,14 +90,17 @@ loop(#state{children = Children, restart = Restarts} = State) ->
                     From ! {not_found},
                     loop(State);                
                 _ ->
-                    Name ! {stop, Name},
-                    NewState = State#state{children = proplists:delete(Name, Children)},
+                    NewState = 
+                        case lists:member(whereis(Name), Restarts) of
+                            true ->  State#state{children = proplists:delete(Name, Children), restart = lists:delete(whereis(Name), Restarts)};
+                            false -> State#state{children = proplists:delete(Name, Children)}
+                        end,
+                    keylist:stop(Name),
                     From ! {ok, stop_child},
                     loop(NewState)
-
             end;
         {From, get_names} ->
-            From ! Children,
+            From ! State,
             loop(State);
         stop ->
             io:format("Process ~p stopped~n", [?MODULE]),
@@ -111,7 +115,7 @@ loop(#state{children = Children, restart = Restarts} = State) ->
                 {Name, Pid} ->
                     case lists:member(Pid, Restarts) of
                         true ->
-                            NewState = State#state{children = proplists:delete(Name, Children)},
+                            NewState = State#state{children = proplists:delete(Name, Children), restart = lists:delete(Pid, Restarts)},
                             start_child(#{name => Name, restart => permanent});
                         false ->
                             NewState = State#state{children = proplists:delete(Name, Children)}
