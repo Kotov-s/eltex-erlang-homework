@@ -3,7 +3,7 @@
 -behaviour(gen_server).
 
 %% Callbacks
--export([init/1, handle_call/3, handle_cast/2]).
+-export([init/1, handle_call/3]).
 
 %% API
 -export([start_link/1, start_monitor/1, stop/1]).
@@ -18,7 +18,6 @@
     {ok, {Pid :: pid(), MonRef :: reference()}} | ignore | {error, Reason :: term()}.
 -type start_ret() ::
     {ok, Pid :: pid()} | ignore | {error, Reason :: term()}.
-
 
 %% API
 
@@ -40,52 +39,46 @@ stop(Name) ->
 -spec add(atom(), any(), any(), any()) -> {ok, integer()}.
 %% @doc Adds a key-value pair to the keylist.
 add(Name, Key, Value, Comment) ->
-    gen_server:call(Name, {self(), add, Key, Value, Comment}).
+    gen_server:call(Name, {add, Key, Value, Comment}).
 
 -spec is_member(atom(), any()) -> {ok, boolean(), integer()}.
 %% @doc Checks if a key is a member of the keylist.  
 is_member(Name, Key) ->
-    gen_server:call(Name, {self(), is_member, Key}). 
+    gen_server:call(Name, {is_member, Key}). 
  
 -spec take(atom(), any()) -> {ok, not_found | {any(), any(), any()}, integer()}.
 %% @doc Takes a key-value pair from the keylist.
 take(Name, Key) ->
-    gen_server:call(Name, {self(), take, Key}).
+    gen_server:call(Name, {take, Key}).
 
 -spec find(atom(), any()) -> {ok, not_found | {any(), any(), any()}, integer()}.
 %% @doc Finds a key-value pair in the keylist. 
 find(Name, Key) ->
-    gen_server:call(Name, {self(), find, Key}). 
+    gen_server:call(Name, {find, Key}). 
 
 -spec delete(atom(), any()) -> {ok, list(), integer()}.
 %% @doc Deletes a key-value pair from the keylist.
 delete(Name, Key) ->
-    gen_server:call(Name, {self(), delete, Key}). 
+    gen_server:call(Name, {delete, Key}). 
 
 -spec show_list(atom()) -> ok.
 %% @doc Shows the list of key-value pairs in the keylist.
 show_list(Name) ->
-    gen_server:cast(Name, {self(), show_list}).     
+    gen_server:call(Name, {show_list}).     
 
 %% CALLBACK
 
-%% @hidden
-init([]) -> 
-    {ok, #state{}}.
-
 %% @hidden    
-handle_call({From, add, Key, Value, Comment}, _From, #state{list = List, counter = Counter} = State) ->
+handle_call({add, Key, Value, Comment}, _From, #state{list = List, counter = Counter} = State) ->
     NewState = State#state{list = [{Key, Value, Comment} | List], counter = Counter + 1},
-    From ! {ok, NewState#state.counter},
     {reply, {ok, NewState#state.counter}, NewState};
 
-handle_call({From, is_member, Key}, _From, #state{list = List, counter = Counter} = State) ->
+handle_call({is_member, Key}, _From, #state{list = List, counter = Counter} = State) ->
     Res = lists:keymember(Key, 1, List),
     NewState = State#state{counter = Counter + 1},
-    From ! {ok, Res, NewState#state.counter},
     {reply, {ok, Res, NewState#state.counter}, NewState};
 
-handle_call({From, take, Key}, _From, #state{list = List, counter = Counter} = State) ->
+handle_call({take, Key}, _From, #state{list = List, counter = Counter} = State) ->
     Msg = 
         case lists:keytake(Key, 1, List) of
             false ->
@@ -95,10 +88,9 @@ handle_call({From, take, Key}, _From, #state{list = List, counter = Counter} = S
                 NewState = State#state{list = NewList, counter = Counter + 1},
                 {ok, Found, NewState#state.counter}
         end,
-    From ! Msg,
     {reply, Msg, NewState};
 
-handle_call({From, find, Key}, _From, #state{list = List, counter = Counter} = State) ->
+handle_call({find, Key}, _From, #state{list = List, counter = Counter} = State) ->
     NewState = State#state{counter = Counter + 1},
     Msg = 
         case lists:keyfind(Key, 1, List) of
@@ -107,20 +99,22 @@ handle_call({From, find, Key}, _From, #state{list = List, counter = Counter} = S
             Res ->
                 {ok, Res, NewState#state.counter}
         end,
-    From ! Msg,
     {reply, Msg, NewState};
 
-handle_call({From, delete, Key}, _From, #state{list = List, counter = Counter} = State) ->
+handle_call({delete, Key}, _From, #state{list = List, counter = Counter} = State) ->
     Res = lists:keydelete(Key, 1, List),
     NewState = State#state{counter = Counter + 1, list = Res},
-    From ! {ok, Res, NewState#state.counter},
-    {reply, {ok, Res, NewState#state.counter}, NewState}.
+    {reply, {ok, Res, NewState#state.counter}, NewState};
 
-%% @hidden
-handle_cast({From, show_list}, #state{list = List} = State) ->
-    From ! {ok, List},
-    {noreply, State}.
+handle_call({show_list}, _From, #state{list = List} = State) ->
+    {reply, List, State}.
 
 handle_info({added_new_child, Pid, Name}, State) ->
     io:format("Info from process ~p: new keylist created with Pid = ~p, Name = ~p~n", [self(), Pid, Name]),
     {noreply, State}.
+
+%%%%%%%%%%%%%%%%%%%% PRIVATE FUNCTIONS %%%%%%%%%%%%%%%%%%%% 
+
+%% @hidden
+init([]) -> 
+    {ok, #state{}}.
