@@ -117,8 +117,8 @@ handle_call({From, delete, Key}, _From, #state{list = List, counter = Counter} =
     {reply, {ok, Res, NewState#state.counter}, NewState}.
 
 %% @hidden
-handle_cast({From, show_list}, State) ->
-    From ! {ok, State},
+handle_cast({From, show_list}, #state{list = List} = State) ->
+    From ! {ok, List},
     {noreply, State}.
 
 handle_info({added_new_child, Pid, Name}, State) ->
