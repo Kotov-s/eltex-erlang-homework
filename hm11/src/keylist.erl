@@ -117,4 +117,5 @@ handle_info({added_new_child, Pid, Name}, State) ->
 
 %% @hidden
 init([]) -> 
+    process_flag(trap_exit, true),
     {ok, #state{}}.

@@ -75,8 +75,7 @@ handle_call({MonitorOrLink, #{name := Name, restart := Restart}}, _From, #state{
         end,
     {reply, {ok, whereis(Name)}, NewState};
 
-handle_call(stop, _From, #state{children = Children} = State) ->
-    lists:foreach(fun({Name, _Pid}) -> keylist:stop(Name) end, Children),
+handle_call(stop, _From, State) ->
     {stop, normal, stopped, State};
 
 handle_call({stop_child, Name}, _From, #state{children = Children, restart = Restarts} = State) -> 
