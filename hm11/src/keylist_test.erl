@@ -7,7 +7,9 @@
 
 calc_add_test_() ->
     {
-      foreach, fun setup/0, fun teardown/1,
+      foreach, 
+      fun setup/0, 
+      fun teardown/1,
       [
         fun test_keylist/0,
         fun test_keylist_mgr/0
@@ -53,10 +55,10 @@ test_keylist() ->
 
 test_keylist_mgr() ->
     ?debugMsg("keylist_mgr module testing"),
-    exit(whereis(?KEYNAME1), "killing 1st"),
+    exit(whereis(?KEYNAME1), kill),
     %% Delay to wait for the process to restart and update the list
     timer:sleep(10),
-    exit(whereis(?KEYNAME2), "killing 2nd"),
+    exit(whereis(?KEYNAME2), kill),
     timer:sleep(10),
     ?assertEqual(undefined, whereis(?KEYNAME2)),
     ?assertMatch([{?KEYNAME1, _Pid1}], keylist_mgr:get_names()).

@@ -61,6 +61,11 @@ get_names() ->
 %% Callbacks
 
 %% @hidden
+init([]) ->
+    process_flag(trap_exit, true),
+    {ok, #state{}}.
+
+%% @hidden
 handle_call({MonitorOrLink, #{name := Name, restart := Restart}}, _From, #state{children = Children} = State) -> 
     NewState = 
         case proplists:lookup(Name, Children) of
@@ -75,7 +80,8 @@ handle_call({MonitorOrLink, #{name := Name, restart := Restart}}, _From, #state{
         end,
     {reply, {ok, whereis(Name)}, NewState};
 
-handle_call(stop, _From, State) ->
+handle_call(stop, _From,  State) ->
+    % lists:foreach(fun({Name, _Pid}) -> keylist:stop(Name) end, Children),
     {stop, normal, stopped, State};
 
 handle_call({stop_child, Name}, _From, #state{children = Children, restart = Restarts} = State) -> 
@@ -107,11 +113,6 @@ handle_info({'DOWN', _Ref, process, Pid, Reason}, State) ->
    
 
 %%%%%%%%%%%%%%%%%%%% PRIVATE FUNCTIONS %%%%%%%%%%%%%%%%%%%% 
-
-%% @hidden
-init([]) ->
-    process_flag(trap_exit, true),
-    {ok, #state{}}.
 
 %% @hidden
 handle_start_process(Pid, Name, Restart, #state{children = Children, restart = Restarts} = State)->

@@ -3,11 +3,11 @@
 -behaviour(gen_server).
 
 %% Callbacks
--export([init/1, handle_call/3]).
+-export([init/1, handle_call/3, handle_info/2]).
 
 %% API
 -export([start_link/1, start_monitor/1, stop/1]).
--export([add/4, is_member/2, take/2, find/2, delete/2, show_list/1, handle_info/2]).
+-export([add/4, is_member/2, take/2, find/2, delete/2, show_list/1]).
 
 -record(state, {
     list = []   :: list(#state{}) | [], 
@@ -68,6 +68,11 @@ show_list(Name) ->
 
 %% CALLBACK
 
+%% @hidden
+init([]) -> 
+    process_flag(trap_exit, true),
+    {ok, #state{}}.
+
 %% @hidden    
 handle_call({add, Key, Value, Comment}, _From, #state{list = List, counter = Counter} = State) ->
     NewState = State#state{list = [{Key, Value, Comment} | List], counter = Counter + 1},
@@ -112,10 +117,3 @@ handle_call({show_list}, _From, #state{list = List} = State) ->
 handle_info({added_new_child, Pid, Name}, State) ->
     io:format("Info from process ~p: new keylist created with Pid = ~p, Name = ~p~n", [self(), Pid, Name]),
     {noreply, State}.
-
-%%%%%%%%%%%%%%%%%%%% PRIVATE FUNCTIONS %%%%%%%%%%%%%%%%%%%% 
-
-%% @hidden
-init([]) -> 
-    process_flag(trap_exit, true),
-    {ok, #state{}}.
