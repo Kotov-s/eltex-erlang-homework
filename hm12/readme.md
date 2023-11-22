@@ -136,11 +136,13 @@ true
 
 ## binary:replace/3
 
-- `binary:replace/3`: Заменяет все вхождения подстроки в Bitstring. Принимает Bitstring, подстроку и замену. Возвращает Bitstring.
+- `binary:replace/3`: Заменяет вхождение подстроки в Bitstring. Принимает Bitstring, подстроку и замену. Возвращает Bitstring.
 
 ```erlang
 35> binary:replace(<<"My uncle’s goodness is extreme">>, <<"’">>, <<"'">>).
 <<"My uncle's goodness is extreme">>
+36> binary:replace(<<"My uncle's goodness is extreme">>, <<"s">>, <<"">>, [global]).
+<<"My uncle' goodne i extreme">>
 ```
 
 ## binary_to_list/1
@@ -163,7 +165,7 @@ true
 
 ## lists:flatten/1
 
-- `lists:flatten/1`: Берет список, который может содержать другие списки внутри себя, и “выравнивает” его, то есть преобразует в один простой список без вложенных списков. Принимает список. Возвращает список.
+- `lists:flatten/1`: Берет список, который может содержать другие списки внутри себя, и "выравнивает" его, то есть преобразует в один простой список без вложенных списков. Принимает список. Возвращает список.
 
 ```erlang
 43> lists:flatten(["Мой","дядя","самых","честных","правил"]).
