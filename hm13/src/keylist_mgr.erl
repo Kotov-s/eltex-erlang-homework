@@ -47,7 +47,7 @@ start_child(Params) ->
 monitor_child(Params) -> 
     gen_server:call(?MODULE, {start_monitor, Params}).
 
--spec stop_child(atom()) -> {ok, stop_child} | {not_found}.
+-spec stop_child(atom()) -> {ok, stop_child} | {error, not_found}.
 %% @doc Stops a child keylist.
 stop_child(Name) ->
     gen_server:call(?MODULE, {stop_child, Name}).
@@ -87,7 +87,7 @@ handle_call({stop_child, Name}, _From, #state{children = Children, restart = Res
     case proplists:lookup(Name, Children) of
         none ->
             NewState = State,
-            {reply, {not_found}, NewState}  ;                
+            {reply, {error, not_found}, NewState}  ;                
         _ ->
             NewState = State#state{children = proplists:delete(Name, Children), restart = lists:delete(whereis(Name), Restarts)},
             keylist:stop(Name),
