@@ -44,13 +44,13 @@ handle_call({select, Filter}, _From, State) ->
 
 ```erlang
 6> keylist:add(key1, 1, "one", "comm").
-{ok,true}
+{ok, 1}
 7> keylist:add(key1, 2, "two", "comm").
-{ok,true}
+{ok, 2}
 8> keylist:add(key1, 3, "three", "comm").
-{ok,true}
+{ok, 3}
 9> keylist:add(key1, 4, "four", "comm").
-{ok,true}
+{ok, 4}
 10> keylist:match(key1, '$1').
 {ok,[[#item{key = 1,value = "one",comment = "comm"}],
      [#item{key = 2,value = "two",comment = "comm"}],
