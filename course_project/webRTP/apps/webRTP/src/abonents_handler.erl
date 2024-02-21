@@ -1,3 +1,5 @@
+%% @doc This module handles requests to all abonents
+
 -module(abonents_handler).
 
 -export([init/2]).
@@ -8,6 +10,7 @@ init(Req, State) ->
 
 %%%%%%%%%%%%%%%%%%%% PRIVATE FUNCTIONS %%%%%%%%%%%%%%%%%%%% 
 
+%% @hidden
 handle_request(<<"GET">>, Req) ->    
     Res = sip_calls_api:call_all(user_db:show_values()), 
     cowboy_req:reply(200, #{

@@ -1,3 +1,5 @@
+%% @doc This module handles requests to a specific abonent
+
 -module(abonent_handler).
 
 -export([init/2]).

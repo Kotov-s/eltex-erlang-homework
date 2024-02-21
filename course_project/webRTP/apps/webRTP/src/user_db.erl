@@ -1,3 +1,5 @@
+%% @doc This module is responsible for interacting with the database
+
 -module(user_db).
 
 -export([create_and_start/0, add_value/2, delete_value/1, show_value/1, show_values/0]).
@@ -53,7 +55,7 @@ delete_value(Num) ->
     t_res_to_res(T_res).
 
 %% @doc Shows abonent's table data by given abonent num
--spec show_value(Num::integer()) -> [tuple()] | []  | aborted.
+-spec show_value(Num::integer()) -> [tuple()] | [] | aborted.
 show_value(Num) ->
     T_res = 
         mnesia:transaction(
@@ -83,17 +85,10 @@ fill_db_if_json_exists() ->
         true -> 
             {ok, JsonData} = file:read_file(PathToJson),
             ParsedData = jsone:decode(JsonData),
-            fill_db(ParsedData);
+            lists:foreach(fun(#{<<"name">> := BinName, <<"num">> := Number}) -> add_value(Number, binary_to_list(BinName)) end, ParsedData);
         false ->
             logger:warning("There is no '~p' file to fill database", [PathToJson])
     end.
-
-%% @hidden
-fill_db([]) -> ok;
-
-fill_db([#{<<"name">> := BinName, <<"num">> := Number} | Rest]) ->
-    add_value(Number, binary_to_list(BinName)),
-    fill_db(Rest).
 
 %% @hidden
 t_res_to_res(T_res) ->

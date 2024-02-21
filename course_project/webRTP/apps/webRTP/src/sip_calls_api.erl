@@ -1,3 +1,5 @@
+%% @doc This module implements functionality for making calls using the SIP protocol
+
 -module(sip_calls_api).
 
 -export([call/1, call_all/1, start/0]).
@@ -11,10 +13,10 @@
 start() ->
     nksip:start_link(nksip_curse, #{ 
         sip_local_host  => "localhost", 
-        sip_from => "sip:101@10.0.10.11:5060", 
+        sip_from => "sip:101@test.group", 
         plugins => [nksip_uac_auto_auth], 
         sip_listen => "sip:all:5060"
-    }).
+    }).        
 
 %% @doc Function that initiates a call with specified UserNumber  
 -spec call(integer()) -> call_answer().
@@ -47,10 +49,11 @@ call(UserNumber) ->
 % Function that initiates calls to all subscribers in the list.
 -spec call_all([{atom(), integer(), list()}]) -> [call_answer()] | [].
 call_all(List) ->
-    call_all(List, []).
+    lists:foldl(fun({_RecordName, UserNumber, _Username}, ResList) -> [call(UserNumber) | ResList]  end, [], List).
 
 %%%%%%%%%%%%%%%%%%%% PRIVATE FUNCTIONS %%%%%%%%%%%%%%%%%%%%
 
+%% @hidden
 voice_generation(UserNumber) ->
     [{abonents, UserNumber, Username}] = user_db:show_value(UserNumber),
     CreateVoiceFile = "gtts-cli 'Hello, " ++ Username ++ "' --output priv/voice/generate.wav" ,
@@ -58,12 +61,6 @@ voice_generation(UserNumber) ->
     Cmd = CreateVoiceFile ++ " && " ++ ConvertVoice,
     os:cmd(Cmd),
     "priv/voice/output.wav".
-
-%% @hidden
-call_all([], Answers) -> Answers;
-
-call_all([{_RecordName, UserNumber, _Username}|Rest], Answers) ->
-    call_all(Rest, [call(UserNumber) | Answers]).
 
 %% @hidden
 get_address_and_port({ok, Info}) ->
